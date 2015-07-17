@@ -44,9 +44,16 @@ asset.manager = function(ctx) {
                     endpoint = storeConstants.ADMIN_ROLE_ENDPOINT;
                 }
             }
+
+            var provider = ctx.username;
+
+            if(options.attributes.overview_provider){
+                provider = options.attributes.overview_provider;
+            }
+            provider = provider.replace(':', '@');
             //Subscribe the asset author for LC update event and asset update event
-            notifier.subscribeToEvent(options.attributes.overview_provider, assetPath, endpoint, storeConstants.LC_STATE_CHANGE);
-            notifier.subscribeToEvent(options.attributes.overview_provider, assetPath, endpoint, storeConstants.ASSET_UPDATE);
+            notifier.subscribeToEvent(provider, assetPath, endpoint, storeConstants.LC_STATE_CHANGE);
+            notifier.subscribeToEvent(provider, assetPath, endpoint, storeConstants.ASSET_UPDATE);
         },
         update: function(options) {
             this._super.update.call(this, options);
@@ -146,14 +153,14 @@ asset.configure = function() {
             overview: {
                 fields: {
                     provider: {
-                        readonly: true
+                        auto: true
                     },
                     name: {
                         name: {
                             name: 'name',
                             label: 'Name'
                         },
-                        updatable: false,
+                        readonly: true,
                         validation: function() {}
                     },
                     version: {
