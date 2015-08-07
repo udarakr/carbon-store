@@ -26,7 +26,7 @@ var permissions = {};
         return permissions.ANON_ROLE;
     };
     var wso2AnonUsername = function() {
-        return 'Internal/everyone';
+        return 'wso2.anonymous.user';
     };
     var systemPermissionPath = function(path) {
         return '/_system/governance' + path;
@@ -906,6 +906,31 @@ var permissions = {};
             return true;
         }
         return isPermissable(permission, tenantId, username);
+    };
+    permissions.hasActionPermissionforPath = function() {
+        var permission = arguments[0];
+        var action = arguments[1];
+        var tenantId;
+        var username;
+        var authorized;
+        var server = require('store').server;
+        var user = server.current(arguments[2]);
+        username = user.username;
+        tenantId = user.tenantId;
+        if ((!tenantId)) {
+            throw 'Unable to resolve permissions without the tenantId';
+        }
+        var userManager = server.userManager(tenantId);
+        var authorizer = userManager.authorizer;
+
+        if(log.isDebugEnabled()){
+            log.debug('[permissions] checking permission ' + action + ' for ' + username + ' tenantId ' + tenantId + ' path ' + path);
+        }
+        authorized = checkPermissionString(username, permission, action, authorizer);
+        if(log.isDebugEnabled()){
+            log.debug('[permissions] authorized :' + authorized);
+        }
+        return authorized;
     };
     permissions.getAnonRole = getAnonRole;
     permissions.wso2AnonUsername = wso2AnonUsername;

@@ -16,10 +16,8 @@
  *  under the License.
  *
  */
-
-var resources = function(){
-	return {
-		js:['libs/jquery.form.min.js','basic-login.js'],
-        css:['basic-login-header.css']
-    }
+var resources = function (page,meta) {
+    return {
+        js: ['delete-asset.js']
+    };
 };

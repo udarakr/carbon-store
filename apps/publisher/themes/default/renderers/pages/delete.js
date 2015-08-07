@@ -16,10 +16,24 @@
  *  under the License.
  *
  */
-
-var resources = function(){
-	return {
-		js:['libs/jquery.form.min.js','basic-login.js'],
-        css:['basic-login-header.css']
-    }
+var render = function(theme, data, meta, require) {
+    theme('single-col-fluid', {
+        title: 'Copy',
+        header: [{
+            partial: 'header',
+            context: data
+        }],
+        ribbon: [{
+            partial: 'ribbon',
+            context: data
+        }],
+        leftnav: [{
+            partial:'left-nav',
+            context:data
+        }],
+        listassets: [{
+            partial: 'delete-asset',
+            context: data
+        }]
+    });
 };
