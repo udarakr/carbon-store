@@ -481,7 +481,7 @@ var asset = {};
                 //with a underscore (_)
                 key = key.replace('_',':');
                 //Check if wildcard search is enabled
-                if(wildcard){
+                if(wildcard && key != 'tags'){
                     value = '*'+value+'*'; 
                 }
                 queryString.push(key+'='+value);
@@ -1658,6 +1658,7 @@ var asset = {};
         } else {
             asset.uniqueColor = [Math.floor(Math.random() * defaultPalette.length)]
         }
+        asset.icon = this.rxtTemplate.meta.ui.icon;
         return asset;
     };
 
