@@ -215,6 +215,9 @@ var engine = caramel.engine('handlebars', (function() {
                 var meta=' name="' + (name?name:field.name.tableQualifiedName) + '" '+
                          ' id="' + (name?name:field.name.tableQualifiedName) + '" ';
                 var className = " input-large form-control ";
+                if(field.type == "checkbox" || field.type == "file"){
+                    className = "";
+                }
 
                 var isUpdatable = true;
 
@@ -242,8 +245,8 @@ var engine = caramel.engine('handlebars', (function() {
                 }
 //                var isRequired=(field.required == 'true' || ( field.required && field.required != "false"))? true : false; //field.required is not boolean
                 if(field.validate){
-                    className += ' validate-regexp validate-required';
-                    meta += ' data-regexp="' + field.validate + '" ';
+                    className += ' validate-regexp';
+                    meta += ' data-regexp=\'' + field.validate + '\' ';
                 }
                 if(isRequired && field.type != 'file'){
                     className += ' validate-required';
@@ -330,9 +333,11 @@ var engine = caramel.engine('handlebars', (function() {
                         out = elementPrefix + renderOptions(field.value, field.values[0].value, field) + elementSuffix;
                         break;
                     case 'option-text':
+                        var optionValue = value.substr(0,value.indexOf(':'));
+                        var textValue = value.substr(value.indexOf(':')+1);
                         var values = value.split(":");
-                        out = elementPrefix + renderOptionsForOptionsText(values[0], field.values[0].value, field) + elementSuffix;
-                        out += elementPrefix + '<input type="text" value="' + Handlebars.Utils.escapeExpression(values[1]) + '" ' + renderFieldMetaData(field, field.name.tableQualifiedName+'_text', mode) + ' />' + elementSuffix;
+                        out = elementPrefix + renderOptionsForOptionsText(optionValue, field.values[0].value, field) + elementSuffix;
+                        out += elementPrefix + '<input type="text" value="' + Handlebars.Utils.escapeExpression(textValue) + '" ' + renderFieldMetaData(field, field.name.tableQualifiedName+'_text', mode) + ' />' + elementSuffix;
                         break;
                     case 'text':
                         out = elementPrefix + '<input type="text" value="' + Handlebars.Utils.escapeExpression(value) + '"" ' + renderFieldMetaData(field, null, mode) + ' >' + elementSuffix;
@@ -475,6 +480,7 @@ var engine = caramel.engine('handlebars', (function() {
                 //Check if the table is option-text unbounded
                 var unboundedOptionText = false;
                 var withValues = false;
+                var requiredOneRow = false;
                 for(var index in table.fields){
                     if(table.fields.hasOwnProperty(index)){
                         var field = table.fields[index];
@@ -484,9 +490,14 @@ var engine = caramel.engine('handlebars', (function() {
                         if(field.value){
                             withValues = true;
                         }
+
+                        if(field.required){
+                            requiredOneRow = true;
+                        }
                     }
                 }
                 table.withValues = withValues;
+                table.requiredOneRow = requiredOneRow;
 
                 if ( unboundedOptionText) {
                     table.optionText = true;

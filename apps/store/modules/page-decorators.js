@@ -25,6 +25,7 @@ var pageDecorators = {};
     var GovernanceUtils = Packages.org.wso2.carbon.governance.api.util.GovernanceUtils;
     var PaginationContext = Packages.org.wso2.carbon.registry.core.pagination.PaginationContext;
     var HashMap = java.util.HashMap;
+    var ArrayList = java.util.ArrayList;
 
     pageDecorators.navigationBar = function(ctx, page, utils) {
         var app = require('rxt').app;
@@ -314,6 +315,7 @@ var pageDecorators = {};
             'paginationLimit': 1000
         };
         page.tags = doTermSearch(ctx,'tags', paging, true);
+        page.selectedTag = selectedTag(ctx);
         return page;
     };
     pageDecorators.myAssets = function(ctx, page) {
@@ -435,10 +437,10 @@ var pageDecorators = {};
         var popularActive = false;
         var nameActive = false;
         var nameIcon = "fa-arrow-down";
-        var nameNextSort = "DESC";
+        var nameNextSort = "DES";
         var dateTimeActive = false;
         var dateTimeIcon = "fa-arrow-down";
-        var dateTimeNextSort = "DESC";
+        var dateTimeNextSort = "DES";
 
         var queryString = request.getQueryString();
         if(queryString){
@@ -454,12 +456,12 @@ var pageDecorators = {};
                 }
             }
         }else{
-            sortBy = "overview_createdtime";
-            sort = "DESC";
+            sortBy = "createdDate";
+            sort = "DES";
             sortHelp = 'Date/Time Created';
         }
 
-        if(sortBy == "overview_name" && sort == "DESC"){
+        if(sortBy == "overview_name" && sort == "DES"){
             sortHelp = 'Name';
             sortHelpIcon = "fa-arrow-down";
             nameActive = true;
@@ -470,13 +472,13 @@ var pageDecorators = {};
             sortHelpIcon = "fa-arrow-up";
             nameActive = true;
             nameIcon = "fa-arrow-up";
-        }else if(sortBy == "overview_createdtime" && sort == "DESC"){
+        }else if(sortBy == "createdDate" && sort == "DES"){
             sortHelp = 'Date/Time Created';
             sortHelpIcon = "fa-arrow-down";
             dateTimeActive = true;
             dateTimeIcon = "fa-arrow-down";
             dateTimeNextSort = "ASC";
-        }else if(sortBy == "overview_createdtime" && sort == "ASC"){
+        }else if(sortBy == "createdDate" && sort == "ASC"){
             sortHelp = 'Date/Time Created';
             sortHelpIcon = "fa-arrow-up";
             dateTimeActive = true;
@@ -573,6 +575,11 @@ var pageDecorators = {};
     var doTermSearch = function (ctx, facetField, paging, authRequired) {
         var terms = [];
         var results;
+        var categoryField;
+        if(ctx.assetType) {
+            categoryField = ctx.rxtManager.getCategoryField(ctx.assetType);
+        }
+        var selectedTag;
         var map = HashMap();
         var mediaType;
         var searchPage = '/pages/top-assets';
@@ -596,6 +603,21 @@ var pageDecorators = {};
         }
         log.debug("term search query criteria:facetField " + facetField + " mediaType " + mediaType);
 
+        var q = request.getParameter("q");
+        if (q) {
+            var options = parse("{" + q + "}");
+            if (options.category) {
+                var list = new ArrayList();
+                list.add(options.category);
+                if(categoryField) {
+                    map.put(categoryField, list);
+                }
+            }
+            if (options.tags) {
+                selectedTag = options.tags;
+            }
+        }
+
         if (facetField) {
             try {
                 buildPaginationContext(paging);
@@ -607,6 +629,12 @@ var pageDecorators = {};
                     term.value = current.term;
                     term.frequency = current.frequency;
                     term.searchPage = searchPage;
+                    if(selectedTag && selectedTag == current.term){
+                        term.selected=true;
+                    }
+                    else{
+                        term.selected=false;
+                    }
                     terms.push(term);
                 }
             } finally {
@@ -614,6 +642,29 @@ var pageDecorators = {};
             }
         }
         return terms;
+    };
+
+    var selectedTag = function (ctx) {
+
+        var searchPage = '/pages/top-assets';
+        if (ctx.assetType) {
+            var rxtManager = ctx.rxtManager;
+            mediaType = rxtManager.getMediaType(ctx.assetType);
+            searchPage =  '/assets/'+ctx.assetType+'/list';
+        }
+        var q = request.getParameter("q");
+        var queryTag = "";
+        if (q) {
+            var options = parse("{" + q + "}");
+
+            if (options.tags) {
+                queryTag = options.tags;
+            }
+            var selectedTag = {};
+            selectedTag.value = queryTag;
+            selectedTag.url = searchPage;
+            return selectedTag;
+        }
     };
 
     var generatePaginationContext = function(paging){

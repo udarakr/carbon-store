@@ -15,7 +15,7 @@ validator.addDefaultMethods = function () {
     validator.addMethod('regexp', function (element) {
         var regexpStr = $(element).attr('data-regexp') || '';
         var regexp = new RegExp(regexpStr);
-        if (regexp.test($(element).val())) {
+        if ($(element).val() == "" || regexp.test($(element).val())) {
             return "";
         } else {
             return $(element).attr('data-validate-regexp') ||
@@ -68,7 +68,7 @@ validator.removeValidationEvents = function(form){
 };
 validator.initValidationEvents = function (form, submitCallback) {
     var $form = typeof form == "string" ? $('#' + form) : form;
-    $form.on('focus blur keyup change', 'input[type="text"],input[type="file"],textarea', function (e) {
+    $form.on('blur keyup change', 'input[type="text"],input[type="file"],input[type="password"],textarea', function (e) {
         var element = e.target;
         validator.validate(element);
     });
@@ -88,7 +88,7 @@ validator.initValidationEvents = function (form, submitCallback) {
 validator.isValidForm = function (form) {
     var $form = typeof form == "string" ? $('#' + form) : form;
     var formIsValid = true;
-    $('input[type="text"],input[type="file"],textarea', $form).each(function () {
+    $('input[type="text"],input[type="file"],input[type="password"],textarea', $form).each(function () {
         var fieldValid = validator.validate(this);
         formIsValid = formIsValid && fieldValid;
     });
