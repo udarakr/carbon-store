@@ -109,12 +109,18 @@ var error = '';
         var am = assetM.createUserAssetManager(session, options.type); //get asset manager
         var asset = getAsset(options, am); //get asset
         var lcName = resolveLifecycle(options, asset);
+        var nextAction = req.getParameter("nextAction");
         validateAsset(asset, options); //validate asset
         //Obtain the lifecycle
         var lcApi = lifecycleModule.api;
         var lcState = am.getLifecycleState(asset, lcName);
         var lifecycle = lcApi.getLifecycle(lcName, tenantId); //get lifecycle bind with asset
-        var action = lifecycle.transitionAction(lcState, options.nextState);
+        var action;
+        if(nextAction){
+            action = nextAction;
+        } else{
+            action = lifecycle.transitionAction(lcState, options.nextState);
+        }
         //check whether a transition action available from asset.lifecycleState to options.nextState
         if (!action) {
             error = 'It is not possible to reach ' + options.nextState + ' from ' + lcName;
@@ -296,7 +302,7 @@ var error = '';
         //Check if the index provided is valid
         var msg;
         if ((checkItemIndex < 0) || (checkItemIndex > state.checkItems.length - 1)) {
-            msg = 'Unable to change the state of the check item as the index does not point to' + ' a valid check item.The check item index must be between 0 and ' + state.checkItems.length + '.';
+            msg = 'Unable to change the state of the check item as the index does not point to' + ' a valid check item.The check item index must be between 0 and ' + (state.checkItems.length - 1)  + '.';
             throw exceptionModule.buildExceptionObject(msg, constants.STATUS_CODES.BAD_REQUEST);
         }
         //Check if the check item state is the same as the next state
@@ -367,14 +373,19 @@ var error = '';
      */
     api.getState = function (options, req, res, session) {
         var state;
-        validateOptions(options);
         var assetApi = rxtModule.asset;
-        var coreApi = rxtModule.core;
         var am = assetApi.createUserAssetManager(session, options.type); //get asset manager
+        var asset = getAsset(options, am); //get asset
+
+        if (!isLCPermitted(asset, session)){
+            throw "Unauthorized Action - does not have permissions to view lifecycle state";
+        }
+
+        validateOptions(options);
+        var coreApi = rxtModule.core;
         var server = storeModule.server; //get current server instance
         var user = server.current(session); //get current user
         var tenantId = user.tenantId; //get tenantID
-        var asset = getAsset(options, am); //get asset
         var lcName = resolveLifecycle(options, asset);
         validateAsset(asset, options); //validate asset
         var lcApi = lifecycleModule.api; //load lifecycle module
@@ -458,6 +469,10 @@ var error = '';
         var assetApi = rxtModule.asset;
         var am = assetApi.createUserAssetManager(session, options.type);
         var asset = getAsset(options, am);
+        if(!isLCActionsPermitted(asset, options, req, res, session)){
+            var error = 'User not permmited to update checkList of asset of id: ' + options.id;
+            throw exceptionModule.buildExceptionObject(error, constants.STATUS_CODES.UNAUTHORIZED);
+        }
         validateAsset(asset, options);
         var state = this.getState(options, req, res, session);
         isSuccess = updateCheckItemStates(options, asset, am, state);
@@ -587,5 +602,9 @@ var error = '';
     var isLCActionsPermitted = function (asset, options, req, res, session) {
         var permissions = require('/modules/lifecycle/permissions.js').permissions;
         return permissions.isLCActionsPermitted( asset.path, session);
+    };
+    var isLCPermitted = function (asset, session) {
+        var permissions = require('/modules/lifecycle/permissions.js').permissions;
+        return permissions.isLCPermitted(asset.type, session);
     };
 }(api));
